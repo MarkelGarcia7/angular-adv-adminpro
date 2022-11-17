@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, AfterViewInit, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
@@ -21,7 +21,8 @@ export class LoginComponent implements AfterViewInit {
 
   constructor( private fb: FormBuilder, 
                private router: Router,
-               private usuarioService: UsuarioService 
+               private usuarioService: UsuarioService,
+               private ngZone: NgZone 
               ) 
   { 
     this.loginForm = this.fb.group({
@@ -53,10 +54,7 @@ export class LoginComponent implements AfterViewInit {
 
     console.log("Encoded JWT ID token: " + response.credential);
     this.usuarioService.loginGoogle( response.credential )
-      .subscribe( resp => {
-        /* console.log({ login: resp }) */
-        this.router.navigateByUrl('/');
-      })
+      .subscribe(() => this.ngZone.run(() => this.router.navigateByUrl('/')));
   }
 
   login() {
