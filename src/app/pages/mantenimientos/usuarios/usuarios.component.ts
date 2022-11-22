@@ -73,9 +73,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     }
     
     this.busquedasService.buscar( 'usuarios', termino )
-        .subscribe( resp => {
+        .subscribe( (resp: Usuario[]) => {
           this.usuarios = resp;
-          
         });
         /* hay error de "no todas las rutas devuelven algo" */
         return null;
