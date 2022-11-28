@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { map, tap, Observable, catchError, of } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { LoginForm } from '../interfaces/login-form.interfaces';
@@ -15,13 +15,19 @@ const base_url = environment.base_url;
 })
 export class UsuarioService {
 
+  public auth2: any;
   public usuario!: Usuario;
 
   constructor( private http: HttpClient,
-               private router: Router ) { }
+               private router: Router,
+               private ngZone: NgZone ) { }
 
   get token(): string {
     return localStorage.getItem('token') || '';
+  }
+
+  get role(): 'ADMIN_ROLE' | 'USER_ROLE' {
+    return this.usuario.role;
   }
 
   get uid(): string {
@@ -43,10 +49,19 @@ export class UsuarioService {
     });
   } */
 
+  guardarLocalStorage( token: string, menu: any ) {
+    localStorage.setItem( 'token', token );
+    localStorage.setItem( 'menu', JSON.stringify(menu) );
+  }
+
   logOut() {
     localStorage.removeItem('token');
 
-    this.router.navigateByUrl('/login');
+    localStorage.removeItem('menu');
+
+      this.ngZone.run(() => {
+        this.router.navigateByUrl('/login');
+      });
     
   }
 
@@ -60,10 +75,9 @@ export class UsuarioService {
         map( (resp: any) => {
           
           const {email, google, nombre, role, img = '', uid } = resp.usuario;
-          
           this.usuario = new Usuario( nombre, email, '', img, google, role, uid );
-          
-          localStorage.setItem('token', resp.token);
+
+          this.guardarLocalStorage( resp.token, resp.menu );
 
           return true;
         }),
@@ -76,7 +90,7 @@ export class UsuarioService {
     return this.http.post(`${ base_url }/usuarios`, formData )
                 .pipe(
                   tap( (resp: any) => {
-                    localStorage.setItem('token', resp.token)
+                    this.guardarLocalStorage( resp.token, resp.menu );
                   })
                 );
   }
@@ -97,7 +111,7 @@ export class UsuarioService {
     return this.http.post(`${ base_url }/login`, formData )
                 .pipe(
                   tap( (resp: any) => {
-                    localStorage.setItem('token', resp.token)
+                    this.guardarLocalStorage( resp.token, resp.menu );
                   })
                 );
   }
@@ -107,7 +121,7 @@ export class UsuarioService {
     return this.http.post(`${ base_url }/login/google`, { token }) 
       .pipe(
         tap( (resp: any) => {
-          localStorage.setItem('token', resp.token)
+          this.guardarLocalStorage( resp.token, resp.menu );
         })
       )
   }
